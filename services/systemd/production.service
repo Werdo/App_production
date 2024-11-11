@@ -1,0 +1,54 @@
+
+# services/systemd/production.service
+[Unit]
+Description=Production System Service
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/app
+ExecStart=/usr/bin/docker-compose up
+ExecStop=/usr/bin/docker-compose down
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+# Actualizar docker-compose.yml para incluir servicios
+services:
+  print_service:
+    build:
+      context: ./print_service
+      dockerfile: Dockerfile.print
+    container_name: production_print
+    restart: always
+    privileged: true
+    volumes:
+      - /dev/usb:/dev/usb
+      - /dev/bus/usb:/dev/bus/usb
+      - /var/run/cups:/var/run/cups
+    ports:
+      - "8001:8001"
+    environment:
+      - CUPS_SERVER=localhost
+      - PRINTER_NAME=${PRINTER_NAME}
+    networks:
+      - production_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: production_nginx
+    restart: always
+    volumes:
+      - ./services/nginx:/etc/nginx/conf.d
+      - ./frontend/dist:/usr/share/nginx/html
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+      - frontend
+      - print_service
+    networks:
+      - production_network

@@ -1,0 +1,24 @@
+# backend/Dockerfile.backend
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar requirements e instalar dependencias
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar el código
+COPY . .
+
+# Script de inicio
+COPY scripts/start.sh .
+RUN chmod +x start.sh
+
+CMD ["./start.sh"]

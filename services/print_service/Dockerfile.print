@@ -1,0 +1,35 @@
+# print_service/Dockerfile.print
+FROM ubuntu:22.04
+
+# Evitar interacciones durante la instalación
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instalar dependencias
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    cups \
+    cups-client \
+    python3-cups \
+    libcups2-dev \
+    udev \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copiar configuración de CUPS
+COPY services/cups/cupsd.conf /etc/cups/cupsd.conf
+
+# Copiar requirements e instalar dependencias Python
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Copiar el código del servicio de impresión
+COPY . .
+
+# Script de inicio
+COPY scripts/start_print_service.sh .
+RUN chmod +x start_print_service.sh
+
+CMD ["./start_print_service.sh"]
